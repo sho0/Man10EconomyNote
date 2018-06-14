@@ -6,6 +6,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import red.man10.man10vaultapiplus.JPYBalanceFormat;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -40,7 +41,7 @@ public class ViewDebt implements CommandExecutor {
         OfflinePlayer pl = Bukkit.getOfflinePlayer(uuid);
         try {
             while (rs.next()){
-                p.sendMessage("§e[§dMan10EconNote§e]§b" + pl.getName() + "さんの総借金額は" + plugin.vault.complexJpyBalForm(rs.getLong("sum(value_left)")) + "円です");
+                p.sendMessage("§e[§dMan10EconNote§e]§b" + pl.getName() + "さんの総借金額は" + new JPYBalanceFormat(rs.getLong("sum(value_left)")).getString() + "円です");
             }
             rs.close();
             plugin.mysql.close();

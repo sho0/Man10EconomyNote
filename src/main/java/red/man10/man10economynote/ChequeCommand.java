@@ -10,6 +10,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import red.man10.man10vaultapiplus.JPYBalanceFormat;
+import red.man10.man10vaultapiplus.enums.TransactionLogType;
+import red.man10.man10vaultapiplus.enums.TransactionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +59,7 @@ public class ChequeCommand implements CommandExecutor {
                     p.sendMessage("§e[§dMan10EconNote§e]§c所持金額が足りません");
                     return false;
                 }
-                plugin.vault.withdraw(p.getUniqueId(),i);
+                plugin.vault.takePlayerMoney(p.getUniqueId(),(double) i, TransactionType.SEND_CHEQUE, "Created Cheque user:" + p.getName() + " price:" + i, TransactionLogType.RAW );
                 ChequeResult res = createChequeData(p.getName(), p.getUniqueId(), i, null);
 
                 ItemStack blueDye = new ItemStack(Material.INK_SACK, 1, (short) 12);
@@ -66,7 +69,7 @@ public class ChequeCommand implements CommandExecutor {
                 lore.add("§e====[Man10Bank]====" + format(String.valueOf(res.getId())));
                 lore.add("");
                 lore.add("§a§l発行者:" + p.getName());
-                lore.add("§a§l金額:" + plugin.vault.complexJpyBalForm(i) + "円") ;
+                lore.add("§a§l金額:" + new JPYBalanceFormat(i).getString() + "円") ;
                 lore.add("");
                 lore.add("§e==================");
                 itemMeta.addEnchant(Enchantment.PROTECTION_ENVIRONMENTAL, 1,true);
@@ -98,7 +101,7 @@ public class ChequeCommand implements CommandExecutor {
                     p.sendMessage("§e[§dMan10EconNote§e]§c所持金額が足りません");
                     return false;
                 }
-                plugin.vault.withdraw(p.getUniqueId(),i);
+                plugin.vault.takePlayerMoney(p.getUniqueId(),(double) i, TransactionType.SEND_CHEQUE, "Created Cheque user:" + p.getName() + " price:" + i, TransactionLogType.RAW );
                 ChequeResult res = createChequeData(p.getName(), p.getUniqueId(), i, args[1].replace("'","\\'"));
 
                 ItemStack blueDye = new ItemStack(Material.INK_SACK, 1, (short) 12);
@@ -108,7 +111,7 @@ public class ChequeCommand implements CommandExecutor {
                 lore.add("§e====[Man10Bank]====" + format(String.valueOf(res.getId())));
                 lore.add("");
                 lore.add("§a§l発行者:" + p.getName());
-                lore.add("§a§l金額:" + plugin.vault.complexJpyBalForm(i) + "円") ;
+                lore.add("§a§l金額:" + new JPYBalanceFormat(i).getString() + "円") ;
                 if(args[1] != null || !args[1].equalsIgnoreCase("")){
                     lore.add("§d§lメモ:" + args[1].replaceAll("&", "§").replaceAll("_", " "));
                 }

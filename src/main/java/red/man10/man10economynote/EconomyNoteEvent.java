@@ -17,6 +17,9 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
+import red.man10.man10vaultapiplus.JPYBalanceFormat;
+import red.man10.man10vaultapiplus.MoneyPoolObject;
+import red.man10.man10vaultapiplus.enums.*;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -116,7 +119,7 @@ public class EconomyNoteEvent implements Listener {
                             e.getWhoClicked().sendMessage("§e[§dMan10EconNote§e]§c§l手形の残高を超す請求をしています");
                             return;
                         }
-                        plugin.vault.withdraw(ld.uuid,plugin.withdrawMenu.get(e.getWhoClicked().getUniqueId()));
+                        plugin.vault.transferMoneyPlayerToPlayer(ld.uuid, e.getWhoClicked().getUniqueId(),plugin.withdrawMenu.get(e.getWhoClicked().getUniqueId()), TransactionCategory.ECONOMY_NOTE, TransactionType.COLLECT, "Economy note withdrawal by:" + e.getWhoClicked().getName() + " to:" + ld.name  + " price:" + plugin.withdrawMenu.get(e.getWhoClicked().getUniqueId()) );
                         ItemStack item = e.getWhoClicked().getInventory().getItem(plugin.slotData.get(e.getWhoClicked().getUniqueId()));
                         ItemMeta itemMeta = item.getItemMeta();
                         List<String> lore = itemMeta.getLore();
@@ -126,7 +129,6 @@ public class EconomyNoteEvent implements Listener {
                         plugin.mysql.execute("UPDATE man10_economy_note SET value_left ='" +  String.valueOf(ld.valueLeft - plugin.withdrawMenu.get(e.getWhoClicked().getUniqueId())) + "' WHERE id ='" + ld.id + "'");
                         plugin.lendDataCacheMap.remove(ld.id);
                         target.sendMessage("§e[§dMan10EconNote§e]§c§l" + e.getWhoClicked().getName() + "はあなたの約束手形から" + plugin.withdrawMenu.get(e.getWhoClicked().getUniqueId()) + "円引き出しました");
-                        plugin.vault.deposit(e.getWhoClicked().getUniqueId(),plugin.withdrawMenu.get(e.getWhoClicked().getUniqueId()));
                         plugin.createLog(ld.id,e.getWhoClicked().getName(), e.getWhoClicked().getUniqueId(), "RedeemPromissoryNote", plugin.withdrawMenu.get(e.getWhoClicked().getUniqueId()));
                         e.getWhoClicked().closeInventory();
                         if(ld.valueLeft == 0){
@@ -172,7 +174,9 @@ public class EconomyNoteEvent implements Listener {
                                 plugin.createLog(nd.getId(),e.getWhoClicked().getName(),e.getWhoClicked().getUniqueId(),"RedeemCheque",nd.getValue());
                                 plugin.mysql.execute("UPDATE man10_economy_note SET expired ='1' WHERE id=" + nd.getId());
                                 plugin.noteCacheMap.remove(nd.getId());
-                                plugin.vault.deposit(e.getWhoClicked().getUniqueId(), nd.getValue());
+                                double toOldBalance = plugin.vault.getBalance(e.getWhoClicked().getUniqueId());
+                                plugin.vault.givePlayerMoney(e.getWhoClicked().getUniqueId(), nd.getValue(), TransactionType.REDEEM_CHEQUE, "Man10 Cheque Collected by :" + e.getWhoClicked().getName() + " from:" + nd.getName() + " value:" + nd.getValue(), TransactionLogType.RAW);
+                                plugin.vault.createTransactionLog(TransactionCategory.VOID, TransactionType.REDEEM_CHEQUE, plugin.vault.getPluginName(), nd.getValue(), nd.getName(), nd.getUuid(), e.getWhoClicked().getName(), e.getWhoClicked().getUniqueId(), 0, 0, toOldBalance, toOldBalance+nd.getValue(), -1, TransactionLogType.RESULT, "Man10 Cheque Collected by :" + e.getWhoClicked().getName() + " from:" + nd.getName() + " value:" + nd.getValue());
                                 e.getWhoClicked().closeInventory();
                             }
                         }
@@ -257,9 +261,11 @@ public class EconomyNoteEvent implements Listener {
                                 ink.setItemMeta(inkMeta);
 
                                 plugin.createLog(id,plugin.sentLendDataDataHashMap.get(e.getWhoClicked().getUniqueId()).fromName,plugin.sentLendDataDataHashMap.get(e.getWhoClicked().getUniqueId()).fromUUID,"CreatePromissoryNote",ld.finalValue);
-                                plugin.vault.withdraw(plugin.sentLendDataDataHashMap.get(e.getWhoClicked().getUniqueId()).fromUUID, ld.finalValueLender);
-                                plugin.vault.deposit(e.getWhoClicked().getUniqueId(), ld.baseValue);
+                                MoneyPoolObject pool = new MoneyPoolObject(plugin.vault.getPluginName(), MoneyPoolTerm.SHORT_TERM, MoneyPoolType.MEMORY, "Man10 EconomyNote MoneyFlow Pool");
+                                plugin.vault.transferMoneyPlayerToPool(plugin.sentLendDataDataHashMap.get(e.getWhoClicked().getUniqueId()).fromUUID, pool.getId(), ld.finalValueLender, TransactionCategory.ECONOMY_NOTE, TransactionType.LEND, "PromissoryNote money send");
+                                plugin.vault.transferMoneyPoolToPlayer(pool.getId(),e.getWhoClicked().getUniqueId(), ld.baseValue,TransactionCategory.ECONOMY_NOTE, TransactionType.LEND, "PromissoryNote money receive");
                                 Bukkit.getPlayer(plugin.sentLendDataDataHashMap.get(e.getWhoClicked().getUniqueId()).fromUUID).getInventory().addItem(ink);
+                                pool.scheduleSendRemainderBalanceToCountry(TransactionCategory.TAX, TransactionType.PAY, "PromissoryNote Tax Fee Send");
                                 e.getWhoClicked().closeInventory();
                             }
                         }
@@ -301,12 +307,12 @@ public class EconomyNoteEvent implements Listener {
     }
 
     Inventory createChequeInventory(Player p, long value){
-        Inventory inv = Bukkit.createInventory(null, 27,"§4§l" + plugin.vault.complexJpyBalForm(value) + "円と換金しますか？");
+        Inventory inv = Bukkit.createInventory(null, 27,"§4§l" + new JPYBalanceFormat(value).getString() + "円と換金しますか？");
         ItemStack green = new ItemStack(Material.STAINED_GLASS_PANE,1,(short) 5);
         ItemMeta itemMeta = green.getItemMeta();
         itemMeta.setDisplayName("§a§l" + value + "円と換金する");
         List<String> lore = new ArrayList<>();
-        lore.add("§a§l(" + plugin.vault.complexJpyBalForm(value) + "円)");
+        lore.add("§a§l(" + new JPYBalanceFormat(value).getString()+ "円)");
         itemMeta.setLore(lore);
         green.setItemMeta(itemMeta);
         int[] greens = {0,1,2,9,10,11,18,19,20};

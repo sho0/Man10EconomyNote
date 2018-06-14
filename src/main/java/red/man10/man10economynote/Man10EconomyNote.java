@@ -1,9 +1,9 @@
 package red.man10.man10economynote;
 
-import man10vaultapi.vaultapi.VaultAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import red.man10.man10vaultapiplus.Man10VaultAPI;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +13,7 @@ import java.util.UUID;
 public final class Man10EconomyNote extends JavaPlugin {
 
     public MySQLAPI mysql = null;
-    public VaultAPI vault = null;
+    public Man10VaultAPI vault = null;
 
     public HashMap<UUID,String> inventoryMap = new HashMap<>();
     public HashMap<UUID,NoteData> noteDataMap = new HashMap<>();
@@ -76,7 +76,7 @@ public final class Man10EconomyNote extends JavaPlugin {
         getCommand("mviewdebt").setExecutor(new ViewDebt(this));
         getCommand("man10economynote").setExecutor(new MainCommand(this));
         saveDefaultConfig();
-        vault = new VaultAPI();
+        vault = new Man10VaultAPI("Man10EconomyNote");
         mysql = new MySQLAPI(this, "Man10EconNote");
         mysql.execute(mainDBQuery);
         mysql.execute(logDbQuery);
