@@ -265,7 +265,8 @@ public class EconomyNoteEvent implements Listener {
                                 plugin.vault.transferMoneyPlayerToPool(plugin.sentLendDataDataHashMap.get(e.getWhoClicked().getUniqueId()).fromUUID, pool.getId(), ld.finalValueLender, TransactionCategory.ECONOMY_NOTE, TransactionType.LEND, "PromissoryNote money send");
                                 plugin.vault.transferMoneyPoolToPlayer(pool.getId(),e.getWhoClicked().getUniqueId(), ld.baseValue,TransactionCategory.ECONOMY_NOTE, TransactionType.LEND, "PromissoryNote money receive");
                                 Bukkit.getPlayer(plugin.sentLendDataDataHashMap.get(e.getWhoClicked().getUniqueId()).fromUUID).getInventory().addItem(ink);
-                                pool.scheduleSendRemainderBalanceToCountry(TransactionCategory.TAX, TransactionType.PAY, "PromissoryNote Tax Fee Send");
+                                pool.sendRemainderToCountry("PromissoryNote Tax Fee Send");
+                                e.getWhoClicked().sendMessage("§e§dMan10EconomyNote§e]§a取引が成立しました");
                                 e.getWhoClicked().closeInventory();
                             }
                         }
