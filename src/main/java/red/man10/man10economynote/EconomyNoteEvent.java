@@ -1,6 +1,5 @@
 package red.man10.man10economynote;
 
-import com.sun.xml.internal.ws.client.SenderException;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -16,7 +15,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 import red.man10.man10vaultapiplus.JPYBalanceFormat;
 import red.man10.man10vaultapiplus.MoneyPoolObject;
 import red.man10.man10vaultapiplus.enums.*;

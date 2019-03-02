@@ -83,6 +83,10 @@ public class LendCommand implements CommandExecutor {
                     p.sendMessage("§e[§dMan10EconNote§e]§b金利は0 ～ 0.5 でなくてはなりません");
                     return false;
                 }
+                if(days < 0 || days > 100){
+                    p.sendMessage("§e[§dMan10EconNote§e]§c借用日数は100日以内でなくてはなりません");
+                    return false;
+                }
                 if(plugin.inventoryMap.get(target.getUniqueId()) != null && plugin.inventoryMap.get(target.getUniqueId()).equals("LendConfirm")){
                     p.sendMessage("§e[§dMan10EconNote§e]§c現在プレイヤーは借金の審議中です");
                     return false;
